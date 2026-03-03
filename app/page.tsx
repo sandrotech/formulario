@@ -31,6 +31,7 @@ const schema = z.object({
   disponibilidade: z.string(),
   salario: z.string(),
   linkedin: z.string().optional(),
+  curriculo: z.any().optional(),
 });
 
 export default function Page() {
@@ -42,11 +43,21 @@ export default function Page() {
     setEnviando(true);
     setMensagem(null);
     try {
-      await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+      const formData = new FormData();
+      Object.keys(data).forEach(key => {
+        if (key === 'curriculo' && data[key] && data[key].length > 0) {
+          formData.append('curriculo', data[key][0]);
+        } else if (key !== 'curriculo') {
+          formData.append(key, data[key]);
+        }
       });
+
+      const res = await fetch("/api/submit", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Erro na API");
       setMensagem({ tipo: "ok", texto: "✅ Candidatura enviada com sucesso!" });
       form.reset();
     } catch {
@@ -70,12 +81,12 @@ export default function Page() {
           animate={{ opacity: 1, y: 0 }}
           className="text-3xl font-bold text-center mb-2 text-gray-800"
         >
-          Vaga para Iniciante em Programação
+          Vaga para Desenvolvedor(a) Júnior / Pleno
         </motion.h1>
 
         <p className="text-center text-gray-600 mb-6">
-          💻 100% online, descontraído e por demanda.
-          As aulas acontecem junto ao desenvolvimento de projetos reais — você aprende enquanto faz!
+          🏢 Atuação presencial (Segunda a Sexta, das 08h às 18h).<br />
+          Um ambiente ágil, acolhedor e focado no seu desenvolvimento — para você dar o próximo passo na sua carreira de forma tranquila e com muitos projetos!
         </p>
 
         {mensagem && (
@@ -100,6 +111,9 @@ export default function Page() {
 
                 <Label>Email</Label>
                 <Input type="email" {...form.register("email")} required />
+
+                <Label>Anexe seu Currículo (PDF) - Opcional, mas recomendado!</Label>
+                <Input type="file" accept=".pdf" {...form.register("curriculo")} />
 
                 <Label>Telefone / WhatsApp</Label>
                 <Input {...form.register("telefone")} required />
@@ -139,8 +153,8 @@ export default function Page() {
                 <Select onValueChange={(v) => form.setValue("trabalha", v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Sim, período integral">Sim, período integral</SelectItem>
-                    <SelectItem value="Sim, meio período">Sim, meio período</SelectItem>
+                    <SelectItem value="Sim, na área de TI">Sim, na área de TI</SelectItem>
+                    <SelectItem value="Sim, em outra área">Sim, em outra área</SelectItem>
                     <SelectItem value="Não estou trabalhando">Não estou trabalhando</SelectItem>
                   </SelectContent>
                 </Select>
@@ -149,10 +163,10 @@ export default function Page() {
                 <Select onValueChange={(v) => form.setValue("formacao", v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Ensino fundamental">Ensino fundamental</SelectItem>
-                    <SelectItem value="Ensino médio completo">Ensino médio completo</SelectItem>
-                    <SelectItem value="Curso técnico">Curso técnico</SelectItem>
-                    <SelectItem value="Ensino superior">Ensino superior</SelectItem>
+                    <SelectItem value="Cursando Superior (TI ou exatas)">Cursando Superior (TI ou exatas)</SelectItem>
+                    <SelectItem value="Superior Completo (TI ou exatas)">Superior Completo (TI ou exatas)</SelectItem>
+                    <SelectItem value="Ensino Médio / Curso Técnico">Ensino Médio / Curso Técnico</SelectItem>
+                    <SelectItem value="Outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -168,22 +182,21 @@ export default function Page() {
               </AccordionContent>
             </AccordionItem>
 
-            {/* 📚 AULAS E DESENVOLVIMENTO */}
+            {/* 📚 DISPONIBILIDADE E INTERESSES */}
             <AccordionItem value="aulas">
-              <AccordionTrigger>📚 Aulas e Desenvolvimento</AccordionTrigger>
+              <AccordionTrigger>🕒 Disponibilidade e Interesses</AccordionTrigger>
               <AccordionContent className="space-y-4">
-                <Label>Disponibilidade para aulas práticas (online)</Label>
+                <Label>Disponibilidade de jornada</Label>
                 <Select onValueChange={(v) => form.setValue("disponibilidadeAulas", v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Sim, com certeza">Sim, com certeza!</SelectItem>
-                    <SelectItem value="Depende do horário">Sim, dependendo dos horários</SelectItem>
-                    <SelectItem value="Talvez">Talvez</SelectItem>
-                    <SelectItem value="Não tenho disponibilidade">Não tenho disponibilidade</SelectItem>
+                    <SelectItem value="Integral (8h/dia)">Integral (8h/dia - modalidade Pleno/Júnior)</SelectItem>
+                    <SelectItem value="Meio período (4h a 6h/dia)">Meio período (4h a 6h - modalidade Júnior)</SelectItem>
+                    <SelectItem value="Outro">Outro (menos tempo, etc.)</SelectItem>
                   </SelectContent>
                 </Select>
 
-                <Label>Melhores horários</Label>
+                <Label>Melhores turnos para reuniões/syncs</Label>
                 <Select onValueChange={(v) => form.setValue("horarioAulas", v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
@@ -194,8 +207,8 @@ export default function Page() {
                   </SelectContent>
                 </Select>
 
-                <Label>Áreas de interesse</Label>
-                <Textarea {...form.register("aprendizado")} placeholder="Ex: Lógica, Front-end, Python..." />
+                <Label>Frameworks/Linguagens que domina ou mais se interessa</Label>
+                <Textarea {...form.register("aprendizado")} placeholder="Ex: React, Next.js, Node.js, Python, TypeScript..." />
               </AccordionContent>
             </AccordionItem>
 
@@ -203,23 +216,22 @@ export default function Page() {
             <AccordionItem value="perfil">
               <AccordionTrigger>👨‍💻 Perfil Técnico e Motivacional</AccordionTrigger>
               <AccordionContent className="space-y-4">
-                <Label>Nível atual de conhecimento</Label>
+                <Label>Nível de experiência</Label>
                 <Select onValueChange={(v) => form.setValue("nivel", v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Iniciante total">Sou iniciante total</SelectItem>
-                    <SelectItem value="Já fiz alguns cursos">Já fiz alguns cursos</SelectItem>
-                    <SelectItem value="Já programei um pouco">Já programei um pouco</SelectItem>
+                    <SelectItem value="Júnior">Júnior (Possuo vivência profissional inicial ou projetos avançados)</SelectItem>
+                    <SelectItem value="Pleno">Pleno (Tenho experiência consolidada e autonomia em projetos)</SelectItem>
                   </SelectContent>
                 </Select>
 
-                <Label>Por que quer participar?</Label>
+                <Label>Por que você quer atuar nesta vaga?</Label>
                 <Textarea {...form.register("motivacao")} required />
 
-                <Label>Quantas horas por semana pode se dedicar?</Label>
-                <Input {...form.register("disponibilidade")} placeholder="Ex: 10h, 20h..." required />
+                <Label>Qual a sua expectativa de horário / dedicação diária?</Label>
+                <Input {...form.register("disponibilidade")} placeholder="Ex: 4h diárias, 6h diárias..." required />
 
-                <Label>Você entende que é uma vaga inicial com pagamento simbólico? Qual sua expectativa?</Label>
+                <Label>Qual a sua pretensão salarial? (Insira valores mensais ou valor hora)</Label>
                 <Textarea {...form.register("salario")} required />
 
                 <Label>LinkedIn, GitHub ou portfólio (opcional)</Label>
@@ -238,7 +250,7 @@ export default function Page() {
         <p className="text-center text-sm text-gray-500 mt-8">
           © 2025 - Oportunidade de aprendizado em programação |{" "}
           <a
-            href="https://portfolio.alessandrosantos.dev/"
+            href="https://alessandrosantos.dev/"
             target="_blank"
             className="text-blue-600 font-medium"
           >

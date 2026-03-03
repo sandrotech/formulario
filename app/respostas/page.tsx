@@ -26,6 +26,7 @@ type Candidato = {
     disponibilidade: string;
     salario: string;
     linkedin?: string;
+    curriculo?: string;
     dataEnvio: string;
 };
 
@@ -58,15 +59,26 @@ export default function Respostas() {
     };
 
     const autenticar = async () => {
-        if (senha === "zlAleeh1234@") {
-            setCarregando(true);
-            const res = await fetch("/api/respostas");
+        setCarregando(true);
+        try {
+            const res = await fetch("/api/respostas", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ senha })
+            });
+
+            if (!res.ok) {
+                alert("Senha incorreta!");
+                return;
+            }
+
             const data = await res.json();
-            setDados(data.reverse());
+            setDados(data);
             setAutenticado(true);
+        } catch (error) {
+            alert("Erro ao validar senha.");
+        } finally {
             setCarregando(false);
-        } else {
-            alert("Senha incorreta!");
         }
     };
 
@@ -197,10 +209,10 @@ export default function Respostas() {
                                                 <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{candidato.trabalha}</span>
                                                 <span
                                                     className={`px-2 py-0.5 rounded ${statusAtual === "Aprovado"
-                                                            ? "bg-green-100 text-green-700"
-                                                            : statusAtual === "Reprovado"
-                                                                ? "bg-red-100 text-red-700"
-                                                                : "bg-yellow-100 text-yellow-700"
+                                                        ? "bg-green-100 text-green-700"
+                                                        : statusAtual === "Reprovado"
+                                                            ? "bg-red-100 text-red-700"
+                                                            : "bg-yellow-100 text-yellow-700"
                                                         }`}
                                                 >
                                                     {statusAtual}
@@ -270,13 +282,26 @@ export default function Respostas() {
 
                                                 {candidato.linkedin && (
                                                     <p>
-                                                        <b>Portfólio:</b>{" "}
+                                                        <b>Portfólio/LinkedIn:</b>{" "}
                                                         <a
-                                                            href={candidato.linkedin}
+                                                            href={candidato.linkedin.startsWith('http') ? candidato.linkedin : `https://${candidato.linkedin}`}
                                                             target="_blank"
                                                             className="text-blue-600 underline"
                                                         >
-                                                            {candidato.linkedin}
+                                                            Acessar Perfil
+                                                        </a>
+                                                    </p>
+                                                )}
+
+                                                {candidato.curriculo && (
+                                                    <p>
+                                                        <b>Currículo (PDF):</b>{" "}
+                                                        <a
+                                                            href={`/api/curriculos/${candidato.curriculo}`}
+                                                            target="_blank"
+                                                            className="text-blue-600 underline"
+                                                        >
+                                                            Visualizar/Baixar Currículo
                                                         </a>
                                                     </p>
                                                 )}
